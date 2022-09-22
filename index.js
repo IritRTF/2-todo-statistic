@@ -2,7 +2,7 @@ const {getAllFilePathsWithExtension, readFile} = require('./fileSystem');
 const {readLine} = require('./console');
 
 const files = getFiles();
-
+let TODOs = [];
 console.log('Please, write your command!');
 readLine(processCommand);
 
@@ -18,7 +18,7 @@ function readLines(file){
 function findTODO(lines){
     let TODOs = [];
     lines.forEach(line => {
-        if (line.includes("// TODO "))
+        if (line.includes("// TODO ") && !line.includes('\"// TODO \"'))
            TODOs.push(line.split("// TODO ")[1]);
     });
     return TODOs;
@@ -38,13 +38,22 @@ function processTODOs(TODOs){
     return processedTODOs;
 }
 
+function findAllTODOs(){
+    let TODOs = [];
+    let files = getFiles();
+    files.forEach(file => {
+        processTODOs(findTODO(readLines(file))).forEach( TODO => TODOs.push(TODO));
+    })
+    return TODOs;
+}
+
 function processCommand(command) {
     switch (command) {
         case 'exit':
             process.exit(0);
             break;
         case 'test':
-            console.log(processTODOs(findTODO(readLines(getFiles()[0]))));
+            console.log(findAllTODOs());
             break;
         default:
             console.log('wrong command');
@@ -52,4 +61,4 @@ function processCommand(command) {
     }
 }
 
-// TODO you can do it!
+
