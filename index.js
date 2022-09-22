@@ -2,7 +2,8 @@ const {getAllFilePathsWithExtension, readFile} = require('./fileSystem');
 const {readLine} = require('./console');
 
 const files = getFiles();
-let TODOs = [];
+const TODOs = findAllTODOs();
+
 console.log('Please, write your command!');
 readLine(processCommand);
 
@@ -53,7 +54,7 @@ function processCommand(command) {
             process.exit(0);
             break;
         case 'test':
-            console.log(findAllTODOs());
+            console.log(TODOs);
             break;
         default:
             console.log('wrong command');
