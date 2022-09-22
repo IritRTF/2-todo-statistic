@@ -28,9 +28,12 @@ function processTODOs(TODOs){
     let processedTODOs = [];
     TODOs.forEach(TODO => {
         let splitedTODO = TODO.split("; ");
+        let importanc = 0;
+        splitedTODO[2].split("").forEach( ch => { if (ch === '!') importanc += 1;});
         processedTODOs.push({name : splitedTODO[0], 
                              date : splitedTODO[1], 
-                             comment : splitedTODO[2]});
+                             comment : splitedTODO[2],
+                             importance : importanc});
     });
     return processedTODOs;
 }
