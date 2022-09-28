@@ -1,10 +1,10 @@
 const {getAllFilePathsWithExtension, readFile} = require('./fileSystem');
 const {readLine} = require('./console');
-
+let printResult = [];
+let maxRow = 0;
 let longestName = 6;
 const files = getFiles();
 const TODOs = findAllTODOs();
-
 
 console.log('Please, write your command!');
 readLine(processCommand);
@@ -60,43 +60,47 @@ function findAllTODOs(){
     return TODOs;
 }
 
+
 // Команды
 
 function show(){
-    printTitle();
     TODOs.forEach(TODO => beautifulPrint(TODO));
-    console.log("-".repeat(100));
-    
+    printTitle(maxRow);
+    printResult.forEach(element =>console.log(element));
+    console.log("-".repeat(maxRow));
 }
 
 function important(){
-    printTitle();
     TODOs.forEach(TODO => {if (TODO['importance'] > 0) beautifulPrint(TODO)});
-    console.log("-".repeat(100));
+    printTitle(maxRow);
+    printResult.forEach(element =>console.log(element));
+    console.log("-".repeat(maxRow));
 }
 
 function important(){
-    printTitle();
     TODOs.forEach(TODO => {if (TODO['importance'] > 0) beautifulPrint(TODO)});
-    console.log("-".repeat(100));
+    printTitle(maxRow);
+    printResult.forEach(element =>console.log(element));
+    console.log("-".repeat(maxRow));
 }
 
 function user(name){
-    printTitle();
     TODOs.forEach(TODO => {if (TODO['name'] === name) beautifulPrint(TODO)});
-    console.log("-".repeat(100));
+    printTitle(maxRow);
+    printResult.forEach(element =>console.log(element));
+    console.log("-".repeat(maxRow));
 }
 
 function sortImportance(){
-    printTitle();
     TODOs
     .sort((a, b) => b.importance - a.importance)
     .forEach(TODO => {beautifulPrint(TODO)});
-    console.log("-".repeat(100));
+    printTitle(maxRow);
+    printResult.forEach(element =>console.log(element));
+    console.log("-".repeat(maxRow));
 }
 
 function sortUser(){
-    printTitle();
     let usedNames = [];
     TODOs
     .forEach(TODO => 
@@ -111,36 +115,40 @@ function sortUser(){
     {
         user(TODO.name);
     });
-    console.log("-".repeat(100));
+    printTitle(maxRow);
+    printResult.forEach(element =>console.log(element));
+    console.log("-".repeat(maxRow));
 }
 
 
 function sortDate(date){
-    printTitle();
     TODOs
     .sort((a, b) => b.date - a.date)
     .forEach(TODO => {beautifulPrint(TODO)});
-    console.log("-".repeat(100));
+    printTitle(maxRow);
+    printResult.forEach(element =>console.log(element));
+    console.log("-".repeat(maxRow));
 }
 
 function findDate(date){
-    printTitle();
     TODOs
     .sort((a, b) => b.date - a.date)
     .forEach(TODO => {
         if (TODO.date >= date)
         beautifulPrint(TODO)
     });
-    console.log("-".repeat(100));
+    printTitle(maxRow);
+    printResult.forEach(element =>console.log(element));
+    console.log("-".repeat(maxRow));
 }
 
 function truncateString(str, len) {
 	return str.substring(0, len) + (len < str.length ? "…" : "");
 }
 
-function printTitle(){
+function printTitle(max){
     console.log(` ! |   name   |    date    | comment`);
-    console.log("-".repeat(100));
+    console.log("-".repeat(max));
 }
 
 function beautifulPrint(TODO){
@@ -150,8 +158,11 @@ function beautifulPrint(TODO){
     let date = TODO.date === 'NaN' ? "".padEnd(10) 
             : `${TODO.date.getFullYear()}-${TODO.date.getMonth() + 1}-${TODO.date.getDate()}`.padEnd(10);
     let comment = truncateString(TODO.comment, 48);
-    console.log(` ${importance}|${name}| ${date} | ${comment}`);
-    
+    printResult.push(` ${importance}|${name}| ${date} | ${comment}`);
+
+    if (` ${importance}|${name}| ${date} | ${comment}`.length> maxRow){
+        maxRow = ` ${importance}|${name}| ${date} | ${comment}`.length
+    }
 }
 
 function processCommand(command) {
@@ -186,5 +197,3 @@ function processCommand(command) {
                 break;
         }
 }
-// TODO dssadas
-
