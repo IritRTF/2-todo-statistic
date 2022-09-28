@@ -75,12 +75,6 @@ function important(){
     console.log("-".repeat(100));
 }
 
-function important(){
-    printTitle();
-    TODOs.forEach(TODO => {if (TODO['importance'] > 0) beautifulPrint(TODO)});
-    console.log("-".repeat(100));
-}
-
 function user(name){
     printTitle();
     TODOs.forEach(TODO => {if (TODO['name'] === name) beautifulPrint(TODO)});
