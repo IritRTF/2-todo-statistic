@@ -3,7 +3,7 @@ const {readLine} = require('./console');
 const { inflate } = require('zlib');
 const REG_DATE = /^date ([1-2][0-9]{3})$|([1-2][0-9]{3}-(0[1-9]|1[0-2]))$|([1-2][0-9]{3}-(0[1-9]|1[0-2]))-([0-2]\d|3[0-2])$/g
 const Path = require('node:path');
-
+const { create } = require('domain');
 
 class Todo {
     constructor(line, fileName) {
@@ -15,7 +15,6 @@ class Todo {
         this.fileName = fileName
     }
 }
-
 
 class File {
     constructor(path) {
@@ -29,6 +28,9 @@ const TODOs = files.map((file) => file.lines.match(/\/\/ TODO .*/g)
                                 .filter(line => getFormattedTODO(line) !== null)
                                 .map(line => new Todo(line, file.name)))
                     .flat(Infinity);
+
+console.log('Please, write your command!' );
+readLine(processCommand);
 
 const COMMANDS = { 
     "exit" : () => process.exit(0),
@@ -44,25 +46,17 @@ const SORTS_COMMAND ={
     "date": () => COMMANDS["show"]().sort((a,b) => Date.parse(b.date) - Date.parse(a.date))
 }
 
-
 function getFormattedTODO(todo){
     let a = todo.substr(8).trim().toLowerCase().split(';');
     return a.length != 3? null: a;
 }
 
-
 function compareString(first, second){
-    if (first > second){
-        return 1;
-    }
-    else if (first < second){
-        return -1;
-    }
+    if (first > second) return 1;
+    else if (first < second) return -1;
     return 0;
 }
 
-console.log('Please, write your command!' );
-readLine(processCommand);
 
 function getFiles() {
     const filePaths = getAllFilePathsWithExtension(process.cwd(), 'js');
@@ -99,16 +93,39 @@ function count(str,char){
 }
 
 function printTable(iterableTODOs){
-    let header = `|  ${'FILE NAME'.padEnd(15)}  |  !  |  ${'USER'.padEnd(10)}  |  ${'DATE'.padEnd(10)}  |  ${'COMMENT'.padEnd(50)}  |`
-    let separator = `+${'-'.repeat(header.length - 2)}+`;
-    console.log(separator);
-    console.log(header);
-    console.log(separator);
+    let header = ['FILE NAME',"!", 'USER', 'DATE', 'COMMENT'];
+    let maxWidths = [15, 1, 10, 10, 50];
+    let properties = ["fileName", "importance", "nameUser", "date", "comment"]
+    let widths = header.map(x => x.length);
+
     for( let todo of iterableTODOs){
-        console.log(`|  ${rezak(todo.fileName,15)}  |  ${todo.importance !== 0? '!': ' '}  |  ${rezak(todo.nameUser,10)}  |  ${rezak(todo.date,10)}  |  ${rezak(todo.comment,50)}  |`)
-        console.log(separator);
+        for (let i = 0; i < header.length; i++){
+            widths[i] = Math.min(maxWidths[i], Math.max(widths[i], String(todo[properties[i]]).length));
+        }
     }
+    let head = createRow(header, widths, maxWidths);
+    let separator = `+${'-'.repeat(head.length - 2)}+`;
+    console.log(separator);
+    console.log(head);
+    console.log(separator);
+    for (let todo of iterableTODOs){
+        let row = [];
+        for (let property of properties){
+            if (property === "importance"){
+                row.push(todo[property] !== 0? '!': ' ');
+            }else  row.push(todo[property]);
+        }
+        console.log(createRow(row, widths, maxWidths));
+    }
+
+    console.log(separator);
 }
+
+function createRow(row, widths, maxWidths){
+    let a = row.map((x, i) => x.length > maxWidths[i]? rezak(x,maxWidths[i]) : String(x).padEnd(widths[i]));
+    return '|  ' + a.join('  |  ') + '  |';
+}
+
 
 function rezak(str, length){
     if (str.length > length){
