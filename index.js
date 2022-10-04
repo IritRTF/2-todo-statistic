@@ -1,7 +1,6 @@
 const {getAllFilePathsWithExtension, readFile} = require('./fileSystem');
 const {readLine} = require('./console');
 const { inflate } = require('zlib');
-const REG_DATE = /^date ([1-2][0-9]{3})$|([1-2][0-9]{3}-(0[1-9]|1[0-2]))$|([1-2][0-9]{3}-(0[1-9]|1[0-2]))-([0-2]\d|3[0-2])$/g
 const Path = require('node:path');
 const { create } = require('domain');
 
@@ -37,13 +36,19 @@ const COMMANDS = {
     "show" : () => TODOs.map( x => x),
     "important": () =>TODOs.filter(todo => todo.importance != 0),
     "user" : (name) => TODOs.filter(todo => todo.nameUser === name),
-    "sort" : (nameFunc) => SORTS_COMMAND[nameFunc], 
+    "sort" : (nameFunc) => SORTS_COMMAND[nameFunc],
+    "date": (date)=> { let d = Date.parse(date);
+         return TODOs.filter(todo => Date.parse(todo.date) > d);} 
 }
 
 const SORTS_COMMAND ={
-    "importance": () => COMMANDS["show"]().sort((a,b) => b.importance - a.importance),
-    "user": () => COMMANDS["show"]().sort((a,b) => compareString(a.nameUser, b.nameUser)),
-    "date": () => COMMANDS["show"]().sort((a,b) => Date.parse(b.date) - Date.parse(a.date))
+    "importance": COMMANDS["show"]().sort((a,b) => b.importance - a.importance),
+    "user": COMMANDS["show"]().sort((a,b) => compareString(a.nameUser, b.nameUser)),
+    "date": COMMANDS["show"]().sort((a,b) => Date.parse(b.date) - Date.parse(a.date))
+}
+
+function count(str,char){
+	return str.match(new RegExp(char, "g"))?.length ?? 0;
 }
 
 function getFormattedTODO(todo){
@@ -64,34 +69,22 @@ function getFiles() {
 }
 
 function processCommand(command) {
-    if( command == "exit"){
-        COMMANDS[command]();
-    }else if (command == "show"){
-        printTable(COMMANDS[command]());
-    }else if (command == "important"){
-        printTable(COMMANDS[command]());
-    }else if (command.startsWith("user")){
-        let name = command.match(/ .*/).flat(Infinity)[0].trim().toLowerCase();
-        printTable(COMMANDS["user"](name));
-    }else if (command.match(/^sort (importance|user|date)/g)){
-        let a = command.split(" ");
-        printTable(COMMANDS[a[0]](a[1])());
-    }
-    else if (command.match(REG_DATE)){
-        let b = command.split(" ");
-        let date = Date.parse(b[1]);
+    let c = command.split(' ');
 
-        printTable(TODOs.filter(todo => Date.parse(todo.date) > date));
-    }
-    else{
+    if(!(c[0] in COMMANDS)){
         console.log('wrong command');
+    }else{
+        let args = [c.slice(1).join(' ')].filter(s => s.length !== 0); 
+        let iterableTODOs = COMMANDS[c[0]](...args);
+        if (iterableTODOs === undefined || args.length !== COMMANDS[c[0]].length){
+            console.log('wrong command')
+        }else{
+            printTable(iterableTODOs);
+        }
     }
 }
 
-function count(str,char){
-	return str.match(new RegExp(char, "g"))?.length ?? 0;
-}
-
+// в шарпе, я бы, наверное, класс сделал вместо одной фукнции
 function printTable(iterableTODOs){
     let header = ['FILE NAME',"!", 'USER', 'DATE', 'COMMENT'];
     let maxWidths = [15, 1, 10, 10, 50];
@@ -103,11 +96,13 @@ function printTable(iterableTODOs){
             widths[i] = Math.min(maxWidths[i], Math.max(widths[i], String(todo[properties[i]]).length));
         }
     }
+
     let head = createRow(header, widths, maxWidths);
     let separator = `+${'-'.repeat(head.length - 2)}+`;
     console.log(separator);
     console.log(head);
     console.log(separator);
+    
     for (let todo of iterableTODOs){
         let row = [];
         for (let property of properties){
@@ -122,24 +117,18 @@ function printTable(iterableTODOs){
 }
 
 function createRow(row, widths, maxWidths){
-    let a = row.map((x, i) => x.length > maxWidths[i]? rezak(x,maxWidths[i]) : String(x).padEnd(widths[i]));
+    let a = row.map((x, i) => x.length > maxWidths[i]? cutString(x,maxWidths[i]) : String(x).padEnd(widths[i]));
     return '|  ' + a.join('  |  ') + '  |';
 }
 
 
-function rezak(str, length){
+function cutString(str, length){
     if (str.length > length){
         return str.substring(0, length - 3).padEnd(length,'.');
     }
     return str.padEnd(length);
 }
 
-/*+-------------------------------------------------------------------------------------------+*/
-/*| fileName.padEnd(30)  |  !  |  user.padEnd(10)  |  date.padEnd(10)  |  comment.padEnd(50)  |*/
-/*+-------------------------------------------------------------------------------------------+*/
-/*|  ${todo.fileName.padEnd(30)}  | ${'!'? todo.importance !== 0: ' '}  |  ${todo.nameUser.padEnd(10)}  |  ${todo.date.padEnd(10)}  |  ${todo.comment.padEnd(50)}  | */
-/*+-------------------------------------------------------------------------------------------+*/
-
 // TODO a 
 // TODO you can do it!
-// TODO LOL; 1984-13-01; некорректная дата
+// TODO LOL; 1984-13-01; некорректная дата!
