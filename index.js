@@ -15,7 +15,11 @@ function getFiles() {
 let ans = []
 for (let i = 0; i < files.length; i++) {
     let def = -1
-    while (files[i].text.indexOf('// TODO ', def + 1) != -1){
+    while (files[i].text.indexOf('// TODO ', def + 1) != -1) {
+        if (files[i].text[files[i].text.indexOf('// TODO ', def + 1) - 1] === '\'') {
+            def = files[i].text.indexOf('// TODO ', def + 1)
+            continue
+        }
         def = files[i].text.indexOf('// TODO ', def + 1)
         let comment = files[i].text
             .slice(def + 8, files[i].text.indexOf('\n', def + 8) - 1)
@@ -27,7 +31,8 @@ for (let i = 0; i < files.length; i++) {
         ans.push({
             importance: getListIdx(comment.slice(-1)[0], '!').length, 
             user: isOnlyText ? undefined : comment[0].toLowerCase(), 
-            date: isOnlyText ? undefined : comment[1], text: comment[2], 
+            date: isOnlyText ? undefined : comment[1], 
+            text: isOnlyText ? comment[0] : comment[2], 
             fileName: files[i].name,
         })
     }
@@ -83,7 +88,5 @@ const sortFunc = {
     user: (a, b) => a.user > b.user ? 1 : -1,
     date: (a, b) => a.date < b.date ? 1 : -1,
 };
-
-
 
 // TODO you can do it!
