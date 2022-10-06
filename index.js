@@ -1,98 +1,130 @@
-const { getAllFilePathsWithExtension, readFile } = require('./fileSystem');
-const { readLine } = require('./console');
+const {getAllFilePathsWithExtension, readFile} = require('./fileSystem');
+const {readLine} = require('./console');
+const { inflate } = require('zlib');
+const Path = require('node:path');
+const { create } = require('domain');
+
+class Todo {
+    constructor(line, fileName) {
+        let todo = getFormattedTODO(line);
+        this.importance = count(todo[2], "!");
+        this.nameUser = todo[0].trim();
+        this.date = todo[1].trim();
+        this.comment = todo[2].trim();
+        this.fileName = fileName
+    }
+}
+
+class File {
+    constructor(path) {
+        this.name = Path.basename(path);
+        this.lines = readFile(path);
+    }
+}
 
 const files = getFiles();
-const TODOs = files.map((file) => file.match(/\/\/ TODO .*/g)).flat(Infinity);
+const TODOs = files.map((file) => file.lines.match(/\/\/ TODO .*/g)
+                                .filter(line => getFormattedTODO(line) !== null)
+                                .map(line => new Todo(line, file.name)))
+                    .flat(Infinity);
 
-console.log('Please, write your command!');
-
+console.log('Please, write your command!' );
 readLine(processCommand);
 
-function getFiles() {
-    const filePaths = getAllFilePathsWithExtension(process.cwd(), 'js');
-    return filePaths.map((path) => readFile(path));
+const COMMANDS = { 
+    "exit" : () => process.exit(0),
+    "show" : () => TODOs.map( x => x),
+    "important": () =>TODOs.filter(todo => todo.importance != 0),
+    "user" : (name) => TODOs.filter(todo => todo.nameUser === name),
+    "sort" : (nameFunc) => SORTS_COMMAND[nameFunc],
+    "date": (date)=> { let d = Date.parse(date);
+         return TODOs.filter(todo => Date.parse(todo.date) > d);} 
 }
 
-function getCommentsByAuthor(author) {
-    /**
-     * Возвращает массив комментариев определённого автора.
-     * @param {String} author Имя автора.
-     */
-    return TODOs.map((comment) =>
-        comment
-            .replace(/\/\/ TODO /g, '')
-            .replace(' ', '')
-            .split(';')
-    )
-        .filter(
-            (commentList) =>
-                commentList[0].toLowerCase() === author.toLowerCase()
-        )
-        .map((array) => array.pop())
-        .map((comment) => comment.trim());
+const SORTS_COMMAND ={
+    "importance": COMMANDS["show"]().sort((a,b) => b.importance - a.importance),
+    "user": COMMANDS["show"]().sort((a,b) => compareString(a.nameUser, b.nameUser)),
+    "date": COMMANDS["show"]().sort((a,b) => Date.parse(b.date) - Date.parse(a.date))
 }
 
-function checkName(todo) {
-    let form = todo.substr(0).trim().split(';');
-    return form.length != 3 ? Infinity : form[0];
+function count(str,char){
+	return str.match(new RegExp(char, "g"))?.length ?? 0;
 }
 
-function countChar(char, str) {
-    let a = new RegExp(char, 'g');
-    let result = str.match(a)?.length;
-    return result ?? 0;
+function getFormattedTODO(todo){
+    let a = todo.substr(8).trim().toLowerCase().split(';');
+    return a.length != 3? null: a;
 }
 
-function compareStrings(a, b) {
-    if (a > b) return 1;
-    else if (a < b) return -1;
+function compareString(first, second){
+    if (first > second) return 1;
+    else if (first < second) return -1;
     return 0;
 }
 
-function checkDate(todo) {
-    let form = todo.substr(0).trim().split(';');
-    return form.length != 3 ? 0 : form[1];
-}
-// TODO digi; 2018-13-21 ; ALO
-function getDate(date) {
-    if (isNaN(Date.parse(date))) return 0;
-    return Date.parse(date);
-}
 
-function sortBy(key) {
-    if (key === 'importrance')
-        return TODOs.sort((a, b) => countChar('!', b) - countChar('!', a));
-    if (key === 'user')
-        return TODOs.sort((a, b) =>
-            compareStrings(
-                checkName(a.toLowerCase()),
-                checkName(b.toLowerCase())
-            )
-        );
-    if (key === 'date')
-        return TODOs.sort(
-            (a, b) => getDate(checkDate(b)) - getDate(checkDate(a))
-        );
+function getFiles() {
+    const filePaths = getAllFilePathsWithExtension(process.cwd(), 'js');
+    return filePaths.map(path => new File(path));
 }
 
 function processCommand(command) {
-    if (command === 'exit') process.exit();
-    else if (command === 'show')
-        TODOs.forEach((comment) => {
-            console.log(comment);
-        });
-    else if (command === 'important')
-        TODOs.filter((item) => item.includes('!')).forEach((x) =>
-            console.log(x)
-        );
-    else if (command.match(/^user [^ ,\n]*/g))
-        getCommentsByAuthor(command.split(' ')[1]).forEach((comment) =>
-            console.log(comment)
-        );
-    else if (command.match(/^sort (importrance|user|date)/g)) {
-        sortBy(command.split(' ')[1]).forEach((item) => console.log(item));
-    } else console.log('wrong command');
+    let c = command.split(' ');
+
+    if(!(c[0] in COMMANDS)){
+        console.log('wrong command');
+    }else{
+        let args = [c.slice(1).join(' ')].filter(s => s.length !== 0); 
+        let iterableTODOs = COMMANDS[c[0]](...args);
+        if (iterableTODOs === undefined || args.length !== COMMANDS[c[0]].length){
+            console.log('wrong command')
+        }else{
+            printTable(iterableTODOs);
+        }
+    }
 }
-// TODO a
-// TODO z
-// TODO you can do it!
+
+// в шарпе, я бы, наверное, класс сделал вместо одной фукнции
+function printTable(iterableTODOs){
+    let header = ['FILE NAME',"!", 'USER', 'DATE', 'COMMENT'];
+    let maxWidths = [15, 1, 10, 10, 50];
+    let properties = ["fileName", "importance", "nameUser", "date", "comment"]
+    let widths = header.map(x => x.length);
+
+    for( let todo of iterableTODOs){
+        for (let i = 0; i < header.length; i++){
+            widths[i] = Math.min(maxWidths[i], Math.max(widths[i], String(todo[properties[i]]).length));
+        }
+    }
+
+    let head = createRow(header, widths, maxWidths);
+    let separator = `+${'-'.repeat(head.length - 2)}+`;
+    console.log(separator);
+    console.log(head);
+    console.log(separator);
+    
+    for (let todo of iterableTODOs){
+        let row = [];
+        for (let property of properties){
+            if (property === "importance"){
+                row.push(todo[property] !== 0? '!': ' ');
+            }else  row.push(todo[property]);
+        }
+        console.log(createRow(row, widths, maxWidths));
+    }
+
+    console.log(separator);
+}
+
+function createRow(row, widths, maxWidths){
+    let a = row.map((x, i) => x.length > maxWidths[i]? cutString(x,maxWidths[i]) : String(x).padEnd(widths[i]));
+    return '|  ' + a.join('  |  ') + '  |';
+}
+
+
+function cutString(str, length){
+    if (str.length > length){
+        return str.substring(0, length - 3).padEnd(length,'.');
+    }
+    return str.padEnd(length);
+}
