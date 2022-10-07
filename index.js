@@ -8,21 +8,15 @@ console.log('Please, write your command!');
 readLine(processCommand);
 
 function getFiles() {
-    const filePaths = getAllFilePathsWithExtension(process.cwd(), 'js');
-    return filePaths.map(path => ({name: path.split('/').slice(-1)[0], text: readFile(path)}));
+    const filePaths = getAllFilePathsWithExtension(process.cwd(), 'js'); 
+    return filePaths.map(path => (readFile(path).match(/\/\/ TODO .*/g)).map(str => ({name: path.split('/').slice(-1)[0], text: str}))).flat(Infinity);
 }
 
 let ans = []
+console.log(files)
 for (let i = 0; i < files.length; i++) {
-    let def = -1
-    while (files[i].text.indexOf('// TODO ', def + 1) != -1) {
-        if (files[i].text[files[i].text.indexOf('// TODO ', def + 1) - 1] === '\'') {
-            def = files[i].text.indexOf('// TODO ', def + 1)
-            continue
-        }
-        def = files[i].text.indexOf('// TODO ', def + 1)
         let comment = files[i].text
-            .slice(def + 8, files[i].text.indexOf('\n', def + 8) - 1)
+            .slice(8, )
             .split(";")
             .map(item => item.trim())
 
@@ -35,7 +29,6 @@ for (let i = 0; i < files.length; i++) {
             text: isOnlyText ? comment[0] : comment[2], 
             fileName: files[i].name,
         })
-    }
 }
 
 function processCommand(command) {
