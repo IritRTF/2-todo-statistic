@@ -22,6 +22,11 @@ class File {
     }
 }
 
+function getFiles() {
+    const filePaths = getAllFilePathsWithExtension(process.cwd(), 'js');
+    return filePaths.map(path => new File(path));
+}
+
 const files = getFiles();
 const TODOs = files.map((file) => file.lines.match(/\/\/ TODO .*/g)
                                 .filter(line => getFormattedTODO(line) !== null)
@@ -36,15 +41,15 @@ const COMMANDS = {
     "show" : () => TODOs.map( x => x),
     "important": () =>TODOs.filter(todo => todo.importance != 0),
     "user" : (name) => TODOs.filter(todo => todo.nameUser === name),
-    "sort" : (nameFunc) => SORTS_COMMAND[nameFunc],
+    "sort" : (nameFunc) => SORTS_COMMAND[nameFunc]?.(),
     "date": (date)=> { let d = Date.parse(date);
          return TODOs.filter(todo => Date.parse(todo.date) > d);} 
 }
 
 const SORTS_COMMAND ={
-    "importance": COMMANDS["show"]().sort((a,b) => b.importance - a.importance),
-    "user": COMMANDS["show"]().sort((a,b) => compareString(a.nameUser, b.nameUser)),
-    "date": COMMANDS["show"]().sort((a,b) => Date.parse(b.date) - Date.parse(a.date))
+    "importance": () => COMMANDS["show"]().sort((a,b) => b.importance - a.importance),
+    "user": () => COMMANDS["show"]().sort((a,b) => compareString(a.nameUser, b.nameUser)),
+    "date": () => COMMANDS["show"]().sort((a,b) => Date.parse(b.date) - Date.parse(a.date))
 }
 
 function count(str,char){
@@ -62,19 +67,13 @@ function compareString(first, second){
     return 0;
 }
 
-
-function getFiles() {
-    const filePaths = getAllFilePathsWithExtension(process.cwd(), 'js');
-    return filePaths.map(path => new File(path));
-}
-
 function processCommand(command) {
-    let c = command.split(' ');
+    let c = command.split(' ').map(s => s.toLowerCase());
 
     if(!(c[0] in COMMANDS)){
         console.log('wrong command');
     }else{
-        let args = [c.slice(1).join(' ')].filter(s => s.length !== 0); 
+        let args = [c.slice(1).join(' ')].filter(s => s.length !== 0);
         let iterableTODOs = COMMANDS[c[0]](...args);
         if (iterableTODOs === undefined || args.length !== COMMANDS[c[0]].length){
             console.log('wrong command')
