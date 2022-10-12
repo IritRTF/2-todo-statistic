@@ -1,9 +1,9 @@
 const {getAllFilePathsWithExtension, readFile} = require('./fileSystem');
 const {readLine} = require('./console');
+
 let printResult = [];
 let maxRow = 0;
 let longestName = 6;
-const files = getFiles();
 const TODOs = findAllTODOs();
 
 console.log('Please, write your command!');
@@ -14,10 +14,12 @@ function getFiles() {
     return filePaths.map(path => readFile(path));
 }
 
+// Разбиваем файл на линии
 function readLines(file){
     return file.split("\r\n");
 }
 
+// Ищем линию с комментом
 function findTODO(lines){
     let TODOs = [];
     lines.forEach(line => {
@@ -27,6 +29,7 @@ function findTODO(lines){
     return TODOs;
 }
 
+// Превращаем строки с комментариями в массив словарей
 function processTODOs(TODOs){
     let processedTODOs = [];
     TODOs.forEach(TODO => {
@@ -40,7 +43,6 @@ function processTODOs(TODOs){
             ? 'NaN' : splitedTODO[0]).length;
         if (nameLength > longestName)
             longestName = nameLength;
-
         processedTODOs.push({name : splitedTODO.length === 1 ? 'NaN' : splitedTODO[0].toLowerCase(), 
                              date : splitedTODO.length === 1 ? 'NaN' : new Date(splitedTODO[1]), 
                              comment : splitedTODO.length === 1 ? splitedTODO[0] : splitedTODO[2],
@@ -51,6 +53,7 @@ function processTODOs(TODOs){
     return processedTODOs;
 }
 
+// Ищем все строки с комментами во всех файлах
 function findAllTODOs(){
     let TODOs = [];
     let files = getFiles();
@@ -151,6 +154,7 @@ function printTitle(max){
     console.log("-".repeat(max));
 }
 
+// Красивый вывод строки
 function beautifulPrint(TODO){
     let importance = TODO.importance > 0 ? "! " : "  ";
     let name = TODO.name === 'NaN' ? "".padEnd(longestName) 
