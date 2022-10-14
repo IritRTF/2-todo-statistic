@@ -1,39 +1,69 @@
+String.prototype.lastIndexOfEnd = function(string) {
+    var io = this.lastIndexOf(string);
+    return io == -1 ? -1 : io + string.length;
+}
 const {getAllFilePathsWithExtension, readFile} = require('./fileSystem');
 const {readLine} = require('./console');
 
 const files = getFiles();
 
 console.log('Please, write your command!');
-readLine(processCommand('date 2018'));
+readLine(processCommand('show'));
 
 function getFiles() {
     const filePaths = getAllFilePathsWithExtension(process.cwd(), 'js');
     return( filePaths.map(path => readFile(path)));
 }
+function tabl(s){
+    let tab=[]
+    let vosk=''
+    for(let i of s){
+        for(let char of i){
+            if (char=='!'){
 
+                vosk=vosk.concat('!')
+            }
+        }
+        let obj= new Object()
+        obj.user=(i.substr(i.indexOf('TODO')+5,(i.indexOf(';')-i.indexOf('TODO')-5)))
+        obj.date=(i.substr(i.indexOf(';')+2,11))
+        obj.comment=(i.substr(i.lastIndexOfEnd(';'),i.length-i.lastIndexOfEnd(';')))
+        obj.voskl=vosk
+        vosk=''
+        tab.push(obj)
+    }
+    console.table(tab)
+}
 function processCommand(command) {
+    
     command = command.split(' ');
     switch (command[0]) {
         case 'exit':
             process.exit(0);
-            break; 
+            break;
         case 'show':
-            console.log(findTODO().map(x=>x.full));
+            s = findTODO().map(x=>x.full)
+            tabl(s)
             break
         case 'important':
-            console.log(findTODO().map(x=>x.full).filter(x=>(x.includes('!'))))
+            s = findTODO().map(x=>x.full).filter(x=>(x.includes('!')))
+            tabl(s)
             break
         case 'user':
-            console.log(findTODO().map(x=>x.full).filter(x => x.toLowerCase().includes(command[1].toLowerCase()+';')))
+            s = findTODO().map(x=>x.full).filter(x => x.toLowerCase().includes(command[1].toLowerCase()+';'))
+            tabl(s)
             break
         case 'sort':
-            console.log(SortTODO(command[1]).map(x=>x.full))
+            s = SortTODO(command[1]).map(x=>x.full)
+            tabl(s)
             break
         case 'date':
-            console.log(findTODO().map(x=>x.full).filter(x => x.includes(command[1])))
+            s = findTODO().map(x=>x.full).filter(x => x.includes(command[1]))
+            tabl(s)
             break    
     }
 }
+//console.log(findTODO()[1])
 function findTODO(){
   let Allinfo=[]
   for (let file of files){
@@ -49,6 +79,7 @@ function findTODO(){
         Allinfo.push(objinfo)
     }
   }
+
   return Allinfo
 }
 function SortTODO(typesort){
