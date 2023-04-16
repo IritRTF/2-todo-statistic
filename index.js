@@ -11,16 +11,20 @@ function getFiles() {
     return filePaths.map(path => readFile(path));
 }
 
-function findTODO(arr = [], expr = '// TODO'){
-    for (let i=0; i<arr.length; i++){
+function findTODO(arr = [], contains = '', expr = '// TODO') {
+    for (let i = 0; i < arr.length; i++) {
         let cursorIndex = arr[i].indexOf(expr);
-        while (cursorIndex>0){
-            let endStringIndex = files[i].indexOf('\n', cursorIndex)
-            if (endStringIndex<0){
-                console.log(files[i].substring(cursorIndex));
-                continue;
+        while (cursorIndex > 0) {
+            const endStringIndex = files[i].indexOf('\n', cursorIndex)
+            const substring = files[i].substring(cursorIndex, endStringIndex)
+            if (contains.length > 0) {
+                if (substring.includes(contains)) {
+                    console.log(substring)
+                }
+            } else {
+                console.log(substring)
             }
-            console.log(files[i].substring(cursorIndex, endStringIndex))    
+
             cursorIndex = arr[i].indexOf(expr, endStringIndex);
         }
     }
@@ -30,9 +34,12 @@ function processCommand(command) {
     switch (command) {
         case 'exit':
             process.exit(0);
-            break;            
+            break;
         case 'show':
             findTODO(files);
+            break;
+        case 'important':
+            findTODO(files, contains = '!');
             break;
         default:
             console.log('wrong command');
