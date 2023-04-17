@@ -50,25 +50,6 @@ function commandParse(command) {
     }
 }
 
-
-// function commandParse(command) {
-//     const firstSpaceIndex = command.indexOf(' ');
-//     const params = command.substring(firstSpaceIndex,).split(';')
-//     return {
-//         'command': firstSpaceIndex < 0 ? command : command.substring(0, firstSpaceIndex),
-//         'param': params[0] ? params[0].trim() : '',
-//         'param1': params[1] ? params[1].trim() : '',
-//         'param2': params[2] ? params[2].trim() : ''
-//     }
-// }
-
-function commentToObject(comment){
-    let obj = comment.slice(7,).split(';')
-    return {'user': obj[0],
-            'date': obj[1],
-            'comment': obj[2]}
-}
-
 function sortBy(array, sortBy){
     let sortedArray = []
     switch (sortBy){
@@ -78,7 +59,6 @@ function sortBy(array, sortBy){
             break;
         case 'user':
             break;
-        
     }
     return sortedArray;
 }
@@ -107,7 +87,6 @@ function processCommand(str) {
             showTodo(findTODO(files, contains = '', expr = expressions));
             break;
         case 'sort':
-            showTodo(sortBy(findTODO(), param))
             break;
         default:
             console.log('wrong command');
