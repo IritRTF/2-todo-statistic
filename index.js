@@ -1,5 +1,6 @@
 const {getAllFilePathsWithExtension, readFile} = require('./fileSystem');
 const {readLine} = require('./console');
+const globalExpr = '//' + ' TODO' //Для того чтобы в поиск не попадало
 const exp = require('constants');
 
 const files = getFiles();
@@ -12,7 +13,14 @@ function getFiles() {
     return filePaths.map(path => readFile(path));
 }
 
-function findTODO(arr = [], contains = '', expr = ['TODO']) {
+function showTodo(arr){
+    for (let i = 0; i < arr.length; i++){
+        console.log(arr[i])
+    }
+}
+
+function findTODO(arr = [], contains = '', expr = [globalExpr]) {
+    let elements = []
     for (let i = 0; i < arr.length; i++) {
         for (let exprNumb = 0; exprNumb < expr.length; exprNumb++) {
             let cursorIndex = arr[i].indexOf(expr[exprNumb]);
@@ -21,16 +29,17 @@ function findTODO(arr = [], contains = '', expr = ['TODO']) {
                 const substring = files[i].substring(cursorIndex, endStringIndex)
                 if (contains.length > 0) {
                     if (substring.includes(contains)) {
-                        console.log(substring)
+                        elements.push(substring)
                     }
                 } else {
-                    console.log(substring)
+                    elements.push(substring)
                 }
 
                 cursorIndex = arr[i].indexOf(expr, endStringIndex);
             }
         }
     }
+    return elements;
 }
 
 function commandParse(command) {
@@ -42,7 +51,6 @@ function commandParse(command) {
         'date': params[1] ? params[1].trim() : '',
         'comment': params[2] ? params[2].trim() : ''
     }
-
 }
 
 function processCommand(str) {
@@ -58,17 +66,17 @@ function processCommand(str) {
             process.exit(0);
             break;
         case 'show':
-            findTODO(files);
+            showTodo(findTODO(files));
             break;
         case 'important':
-            findTODO(files, contains = '!');
+            showTodo(findTODO(files, contains = '!'));
             break;
         case 'user':
             const expressions = [
-                `TODO ${user.toUpperCase()}`,
-                `TODO ${user[0].toUpperCase()}${user.slice(1).toLowerCase()}`,
-                `TODO ${user.toLowerCase()}`]
-            findTODO(files, contains = '', expr = expressions);
+                `${globalExpr} ${user.toUpperCase()}`,
+                `${globalExpr} ${user[0].toUpperCase()}${user.slice(1).toLowerCase()}`,
+                `${globalExpr} ${user.toLowerCase()}`]
+            showTodo(findTODO(files, contains = '', expr = expressions));
             break;
         default:
             console.log('wrong command');
