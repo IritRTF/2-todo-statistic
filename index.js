@@ -43,23 +43,51 @@ function findTODO(arr = [], contains = '', expr = [globalExpr]) {
 }
 
 function commandParse(command) {
-    const firstSpaceIndex = command.indexOf(' ');
-    const params = command.substring(firstSpaceIndex,).split(';')
+    const splitedCommand = command.split(' ')
     return {
-        'command': firstSpaceIndex < 0 ? command : command.substring(0, firstSpaceIndex),
-        'user': params[0] ? params[0].trim() : '',
-        'date': params[1] ? params[1].trim() : '',
-        'comment': params[2] ? params[2].trim() : ''
+        'command': splitedCommand.length > 1 ? splitedCommand[0] : String(splitedCommand),
+        'param': splitedCommand.length > 1 ? splitedCommand[1].trim() : ''
     }
+}
+
+
+// function commandParse(command) {
+//     const firstSpaceIndex = command.indexOf(' ');
+//     const params = command.substring(firstSpaceIndex,).split(';')
+//     return {
+//         'command': firstSpaceIndex < 0 ? command : command.substring(0, firstSpaceIndex),
+//         'param': params[0] ? params[0].trim() : '',
+//         'param1': params[1] ? params[1].trim() : '',
+//         'param2': params[2] ? params[2].trim() : ''
+//     }
+// }
+
+function commentToObject(comment){
+    let obj = comment.slice(7,).split(';')
+    return {'user': obj[0],
+            'date': obj[1],
+            'comment': obj[2]}
+}
+
+function sortBy(array, sortBy){
+    let sortedArray = []
+    switch (sortBy){
+        case 'important':
+            break;
+        case 'date':
+            break;
+        case 'user':
+            break;
+        
+    }
+    return sortedArray;
 }
 
 function processCommand(str) {
 
     let parse = commandParse(str)
     const command = parse.command
-    const date = parse.date
-    const user = parse.user
-    const comment = parse.comment
+    const param = parse.param
 
     switch (command) {
         case 'exit':
@@ -73,10 +101,13 @@ function processCommand(str) {
             break;
         case 'user':
             const expressions = [
-                `${globalExpr} ${user.toUpperCase()}`,
-                `${globalExpr} ${user[0].toUpperCase()}${user.slice(1).toLowerCase()}`,
-                `${globalExpr} ${user.toLowerCase()}`]
+                `${globalExpr} ${param.toUpperCase()}`,
+                `${globalExpr} ${param[0].toUpperCase()}${param.slice(1).toLowerCase()}`,
+                `${globalExpr} ${param.toLowerCase()}`]
             showTodo(findTODO(files, contains = '', expr = expressions));
+            break;
+        case 'sort':
+            showTodo(sortBy(findTODO(), param))
             break;
         default:
             console.log('wrong command');
