@@ -13,13 +13,13 @@ function getFiles() {
     return filePaths.map(path => readFile(path));
 }
 
-function showTodo(arr){
-    for (let i = 0; i < arr.length; i++){
+function showTodo(arr) {
+    for (let i = 0; i < arr.length; i++) {
         console.log(arr[i])
     }
 }
 
-function findTODO(arr = [], contains = '', expr = [globalExpr]) {
+function getTODOs(arr = [], contains = '', expr = [globalExpr]) {
     let elements = []
     for (let i = 0; i < arr.length; i++) {
         for (let exprNumb = 0; exprNumb < expr.length; exprNumb++) {
@@ -50,17 +50,50 @@ function commandParse(command) {
     }
 }
 
-function sortBy(array, sortBy){
-    let sortedArray = []
-    switch (sortBy){
+function sortByImportant(array) {
+    let importantPriority = {}
+    let maxCount = 0;
+    for (let i = 0; i < array.length; i++) {
+        let counter = 0
+        for (let symbolIndex = 0; symbolIndex < array[i].length; symbolIndex++) {
+            if (array[i][symbolIndex] == '!') {
+                counter++
+            }
+            if (maxCount < counter) {
+                maxCount = counter
+            }
+        }
+        if (counter in importantPriority) {
+            importantPriority[counter].push(array[i])
+        } else {
+            importantPriority[counter] = [array[i]]
+        }
+    }
+
+    var result = []
+    for (let i = maxCount; i >= 0; i--) {
+        if (i in importantPriority) {
+            importantPriority[i].forEach(element => {
+                result.push(element)                
+            });
+        } else {
+            continue
+        }
+    }
+    return result
+
+}
+
+function sortBy(array, sortBy) {
+    let sortedArray;
+    switch (sortBy) {
         case 'important':
-            break;
+            return(sortByImportant(array))
         case 'date':
             break;
         case 'user':
             break;
     }
-    return sortedArray;
 }
 
 function processCommand(str) {
@@ -74,19 +107,20 @@ function processCommand(str) {
             process.exit(0);
             break;
         case 'show':
-            showTodo(findTODO(files));
+            showTodo(getTODOs(files));
             break;
         case 'important':
-            showTodo(findTODO(files, contains = '!'));
+            showTodo(getTODOs(files, contains = '!'));
             break;
         case 'user':
             const expressions = [
                 `${globalExpr} ${param.toUpperCase()}`,
                 `${globalExpr} ${param[0].toUpperCase()}${param.slice(1).toLowerCase()}`,
                 `${globalExpr} ${param.toLowerCase()}`]
-            showTodo(findTODO(files, contains = '', expr = expressions));
+            showTodo(getTODOs(files, contains = '', expr = expressions));
             break;
         case 'sort':
+            showTodo(sortBy(getTODOs(files), param))
             break;
         default:
             console.log('wrong command');
