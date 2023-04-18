@@ -13,7 +13,7 @@ function getFiles() {
     return filePaths.map(path => readFile(path))
 }
 
-function showTodo(arr) {
+function printTODO(arr) {
     for (let i = 0; i < arr.length; i++) {
         console.log(arr[i])
     }
@@ -24,7 +24,7 @@ function getTODOs(arr = [], contains = '', expr = [globalExpr]) {
     for (let i = 0; i < arr.length; i++) {
         for (let exprNumb = 0; exprNumb < expr.length; exprNumb++) {
             let cursorIndex = arr[i].indexOf(expr[exprNumb])
-            while (cursorIndex > 0) {
+            while (cursorIndex >= 0) {
                 const endStringIndex = files[i].indexOf('\n', cursorIndex)
                 const substring = files[i].substring(cursorIndex, endStringIndex)
                 if (contains.length > 0) {
@@ -34,7 +34,6 @@ function getTODOs(arr = [], contains = '', expr = [globalExpr]) {
                 } else {
                     elements.push(substring)
                 }
-
                 cursorIndex = arr[i].indexOf(expr, endStringIndex)
             }
         }
@@ -83,7 +82,7 @@ function sortByImportant(array) {
     return result
 }
 
-function parseComent(str) {
+function parseComment(str) {
     const splitedComment = str.slice(globalExpr.length).split(';')
     return {
         'comment': splitedComment.length > 1 ? splitedComment[2].trim() : splitedComment[0],
@@ -98,12 +97,12 @@ function parseComent(str) {
 function creteObjectByField(array, field) {
     const obj = {}
     array.forEach(element => {
-        const parsedComent = parseComent(element)
-        if (parsedComent[field] in obj) {
-            obj[parsedComent[field]].push(element)
+        const parsedComment = parseComment(element)
+        if (parsedComment[field] in obj) {
+            obj[parsedComment[field]].push(element)
         } else {
-            obj[parsedComent[field]] = []
-            obj[parsedComent[field]].push(element)
+            obj[parsedComment[field]] = []
+            obj[parsedComment[field]].push(element)
         }
     })
     return obj
@@ -142,6 +141,35 @@ function sortBy(array, sortBy) {
     }
 }
 
+function nextDate(date){
+    const pasedDate = date.split('-')
+    let newDate = new Date(date)
+    if (pasedDate.length === 1){
+        newDate.setFullYear(newDate.getFullYear() + 1)
+    }
+    else if (pasedDate.length === 2){
+        newDate.setMonth(newDate.getMonth() + 1)
+    }
+    else if (pasedDate.length === 3){
+        newDate.setDate(newDate.getDate() + 1)
+    }
+    return newDate
+}
+
+function commentsAfterDate(array, date){
+    let result = []
+    const dates = creteObjectByField(array, 'date')
+    let afterDate = nextDate(date)
+    Object.keys(dates).forEach(element => {
+        if (new Date(element) >= afterDate){
+            dates[element].forEach(comment => {
+                result.push(comment)
+            })
+        }
+    })
+    return result
+}
+
 function processCommand(str) {
     const parse = commandParse(str)
     const command = parse.command
@@ -152,17 +180,22 @@ function processCommand(str) {
             process.exit(0)
             break
         case 'show':
-            showTodo(getTODOs(files))
+            printTODO(getTODOs(files))
             break
         case 'important':
-            showTodo(getTODOs(files, '!'))
+            printTODO(getTODOs(files, '!'))
             break
         case 'user':
-            const expressions = [`${globalExpr} ${param.toUpperCase()}`, `${globalExpr} ${param[0].toUpperCase()}${param.slice(1).toLowerCase()}`, `${globalExpr} ${param.toLowerCase()}`]
-            showTodo(getTODOs(files, '', expressions))
+            const expressions = [`${globalExpr} ${param.toUpperCase()}`, 
+                                `${globalExpr} ${param[0].toUpperCase()}${param.slice(1).toLowerCase()}`, 
+                                `${globalExpr} ${param.toLowerCase()}`]
+            printTODO(getTODOs(files, '', expressions))
             break
         case 'sort':
-            showTodo(sortBy(getTODOs(files), param))
+            printTODO(sortBy(getTODOs(files), param))
+            break
+        case 'date':
+            printTODO(commentsAfterDate(getTODOs(files), param))
             break
         default:
             console.log('wrong command')
