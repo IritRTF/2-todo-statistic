@@ -86,26 +86,31 @@ function sortByImportant (array) {
 function parseComent (str) {
   const splitedComment = str.slice(globalExpr.length).split(';')
   return {
-    comment: splitedComment.length > 1 ? splitedComment[2].trim() : splitedComment[0],
-    user: splitedComment.length > 1
+    'comment': splitedComment.length > 1 ? splitedComment[2].trim() : splitedComment[0],
+    'user': splitedComment.length > 1
       ? splitedComment[0].trim()[0].toUpperCase() +
         splitedComment[0].trim().slice(1).toLowerCase()
-      : '_WitoutUser',
-    date: splitedComment.length > 1 ? splitedComment[1].trim() : ''
+      : '_WitoutEntries',
+    'date': splitedComment.length > 1 ? splitedComment[1].trim() : '_WitoutEntries'
   }
 }
 
+function creteObjectByField(array, field){
+    const obj = {}
+    array.forEach(element => {
+        const parsedComent = parseComent(element)
+        if (parsedComent[field] in obj){
+            obj[parsedComent[field]].push(element)
+        } else {
+            obj[parsedComent[field]] = []
+            obj[parsedComent[field]].push(element)
+        }
+    })
+    return obj
+}
+
 function sortByUsers (array) {
-  const users = {}
-  array.forEach(element => {
-    const parsedComent = parseComent(element)
-    if (parsedComent.user in users) {
-      users[parsedComent.user].push(element)
-    } else {
-      users[parsedComent.user] = []
-      users[parsedComent.user].push(element)
-    }
-  })
+  const users = creteObjectByField(array, 'user')
   const result = []
   Object.keys(users).sort().forEach(element => {
     users[element].forEach(item => {
@@ -116,17 +121,24 @@ function sortByUsers (array) {
 }
 
 function sortByDate (array) {
-
+    const dates = creteObjectByField(array, 'date')
+    let result = []
+    Object.keys(dates).sort((obj1, obj2) => Number(new Date(obj2))- Number(new Date(obj1))).forEach(element => {
+        dates[element].forEach(comment => {
+            result.push(comment)
+        })
+    })
+    return result
 }
 
 function sortBy (array, sortBy) {
   switch (sortBy) {
     case 'important':
-      return (sortByImportant(array))
+      return sortByImportant(array)
     case 'date':
-      break
+      return sortByDate(array)
     case 'user':
-      return (sortByUsers(array))
+      return sortByUsers(array)
   }
 }
 
