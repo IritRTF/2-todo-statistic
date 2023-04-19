@@ -13,10 +13,72 @@ function getFiles() {
     return filePaths.map(path => readFile(path))
 }
 
-function printTODO(arr) {
-    for (let i = 0; i < arr.length; i++) {
-        console.log(arr[i])
+function checkEntries(text) {
+    return text === '_WitoutEntries' ? '' : text
+}
+
+function repeatSymbols(count, symbol) {
+    let str = ''
+    while (count-- > 0) str += symbol
+    return str
+
+}
+
+function formatStringForTable(text, maxSymbols) {
+    if (text.length > maxSymbols) {
+        return text.slice(0, maxSymbols - 3) + '...'
+    } else {
+        return text.padEnd(maxSymbols)
     }
+}
+
+function getTextLengthOrMax(text, max) {
+    if (text.length > max) return max; else return text.length;
+}
+
+function showTodo(arr) {
+    if (arr.length !== 0) {
+        const maxUserField = 10;
+        const maxDateField = 10;
+        const maxCommentField = 50;
+        let userFieldLength = 0;
+        let commentFieldLength = 0;
+        let result = []
+
+        for (let i = 0; i < arr.length; i++) {
+            const parsedText = parseComment(arr[i])
+            const user = checkEntries(parsedText.user)
+            const comment = checkEntries(parsedText.comment)
+            userFieldLength = getTextLengthOrMax(user, maxUserField) < userFieldLength ?
+                userFieldLength :
+                getTextLengthOrMax(user, maxUserField)
+            commentFieldLength = getTextLengthOrMax(comment, maxCommentField) < commentFieldLength ?
+                commentFieldLength :
+                getTextLengthOrMax(comment, maxCommentField)
+        }
+
+        for (let i = 0; i < arr.length; i++) {
+            const parsedText = parseComment(arr[i])
+            const user = checkEntries(parsedText.user)
+            const date = checkEntries(parsedText.date)
+            const comment = checkEntries(parsedText.comment)
+            const importantPoints = comment.indexOf('!') < 0 ? ' ' : '!'
+            result.push(` ${importantPoints} | ` +
+                `${formatStringForTable(user, userFieldLength)} | ` +
+                `${formatStringForTable(date, maxDateField)} | ` +
+                `${formatStringForTable(comment, commentFieldLength)}`)
+        }
+
+        console.log(` ! | ` + `${formatStringForTable('user', userFieldLength)} | ` +
+            `${formatStringForTable('date', maxDateField)} | ` +
+            `${formatStringForTable('comment', commentFieldLength)}`)
+        console.log(repeatSymbols(result[0].length, '-'))
+        result.forEach(element => {
+            console.log(element)
+        })
+    }
+
+
 }
 
 function getTODOs(arr = [], contains = '', expr = [globalExpr]) {
@@ -24,7 +86,7 @@ function getTODOs(arr = [], contains = '', expr = [globalExpr]) {
     for (let i = 0; i < arr.length; i++) {
         for (let exprNumb = 0; exprNumb < expr.length; exprNumb++) {
             let cursorIndex = arr[i].indexOf(expr[exprNumb])
-            while (cursorIndex >= 0) {
+            while (cursorIndex > 0) {
                 const endStringIndex = files[i].indexOf('\n', cursorIndex)
                 const substring = files[i].substring(cursorIndex, endStringIndex)
                 if (contains.length > 0) {
@@ -34,6 +96,7 @@ function getTODOs(arr = [], contains = '', expr = [globalExpr]) {
                 } else {
                     elements.push(substring)
                 }
+
                 cursorIndex = arr[i].indexOf(expr, endStringIndex)
             }
         }
@@ -49,60 +112,67 @@ function commandParse(command) {
     }
 }
 
+function countSymbolInText(text, symbol) {
+    let counter = 0;
+    for (let i = 0; i < text.length; i++) {
+        if (text[i] === symbol) {
+            counter++;
+        }
+    }
+    return counter;
+}
+
 function sortByImportant(array) {
     const importantPriority = {}
     let maxCount = 0
     for (let i = 0; i < array.length; i++) {
-        let counter = 0
-        for (let symbolIndex = 0; symbolIndex < array[i].length; symbolIndex++) {
-            if (array[i][symbolIndex] === '!') {
-                counter++
-            }
-            if (maxCount < counter) {
-                maxCount = counter
-            }
-        }
-        if (counter in importantPriority) {
-            importantPriority[counter].push(array[i])
-        } else {
-            importantPriority[counter] = [array[i]]
-        }
-    }
+        let pointCount = countSymbolInText(array[i], '!')
+        maxCount < pointCount ? maxCount = pointCount : undefined
 
-    const result = []
-    for (let i = maxCount; i >= 0; i--) {
-        if (i in importantPriority) {
-            importantPriority[i].forEach(element => {
-                result.push(element)
-            })
+        if (pointCount in importantPriority) {
+            importantPriority[pointCount].push(array[i])
         } else {
-            continue
+            importantPriority[pointCount] = [array[i]]
         }
+
+        const result = []
+        for (let i = maxCount; i >= 0; i--) {
+            if (i in importantPriority) {
+                importantPriority[i].forEach(element => {
+                    result.push(element)
+                })
+            } else {
+                continue
+            }
+        }
+        return result
     }
-    return result
 }
 
 function parseComment(str) {
     const splitedComment = str.slice(globalExpr.length).split(';')
     return {
-        'comment': splitedComment.length > 1 ? splitedComment[2].trim() : splitedComment[0],
-        'user': splitedComment.length > 1
-            ? splitedComment[0].trim()[0].toUpperCase()
-                + splitedComment[0].trim().slice(1).toLowerCase()
-            : '_WitoutEntries',
+        'comment': splitedComment.length > 1 ?
+            splitedComment[2].trim() :
+            splitedComment[0].trim(),
+        'user': splitedComment.length > 1 ?
+            splitedComment[0].trim()[0].toUpperCase() + splitedComment[0].trim().slice(1).toLowerCase() :
+            '_WitoutEntries',
         'date': splitedComment.length > 1 ? splitedComment[1].trim() : '_WitoutEntries'
+        // 'commentLength': splitedComment.length > 1 ? splitedComment[2].trim().lentgh : splitedComment[0].trim().length,
+        // 'userLength': splitedComment.length > 1 ? splitedComment[0].trim().length : 0
     }
 }
 
 function creteObjectByField(array, field) {
     const obj = {}
     array.forEach(element => {
-        const parsedComment = parseComment(element)
-        if (parsedComment[field] in obj) {
-            obj[parsedComment[field]].push(element)
+        const parsedText = parseComment(element)
+        if (parsedText[field] in obj) {
+            obj[parsedText[field]].push(element)
         } else {
-            obj[parsedComment[field]] = []
-            obj[parsedComment[field]].push(element)
+            obj[parsedText[field]] = []
+            obj[parsedText[field]].push(element)
         }
     })
     return obj
@@ -122,11 +192,12 @@ function sortByUsers(array) {
 function sortByDate(array) {
     const dates = creteObjectByField(array, 'date')
     let result = []
-    Object.keys(dates).sort((obj1, obj2) => Number(new Date(obj2)) - Number(new Date(obj1))).forEach(element => {
-        dates[element].forEach(comment => {
-            result.push(comment)
+    Object.keys(dates).sort((obj1, obj2) =>
+        Number(new Date(obj2)) - Number(new Date(obj1))).forEach(element => {
+            dates[element].forEach(comment => {
+                result.push(comment)
+            })
         })
-    })
     return result
 }
 
@@ -141,27 +212,26 @@ function sortBy(array, sortBy) {
     }
 }
 
-function nextDate(date){
+
+function nextDate(date) {
     const pasedDate = date.split('-')
     let newDate = new Date(date)
-    if (pasedDate.length === 1){
+    if (pasedDate.length === 1) {
         newDate.setFullYear(newDate.getFullYear() + 1)
-    }
-    else if (pasedDate.length === 2){
+    } else if (pasedDate.length === 2) {
         newDate.setMonth(newDate.getMonth() + 1)
-    }
-    else if (pasedDate.length === 3){
+    } else if (pasedDate.length === 3) {
         newDate.setDate(newDate.getDate() + 1)
     }
     return newDate
 }
 
-function commentsAfterDate(array, date){
+function commentsAfterDate(array, date) {
     let result = []
     const dates = creteObjectByField(array, 'date')
     let afterDate = nextDate(date)
     Object.keys(dates).forEach(element => {
-        if (new Date(element) >= afterDate){
+        if (new Date(element) >= afterDate) {
             dates[element].forEach(comment => {
                 result.push(comment)
             })
@@ -180,22 +250,22 @@ function processCommand(str) {
             process.exit(0)
             break
         case 'show':
-            printTODO(getTODOs(files))
+            showTodo(getTODOs(files))
             break
         case 'important':
-            printTODO(getTODOs(files, '!'))
+            showTodo(getTODOs(files, '!'))
             break
         case 'user':
-            const expressions = [`${globalExpr} ${param.toUpperCase()}`, 
-                                `${globalExpr} ${param[0].toUpperCase()}${param.slice(1).toLowerCase()}`, 
-                                `${globalExpr} ${param.toLowerCase()}`]
-            printTODO(getTODOs(files, '', expressions))
+            const expressions = [`${globalExpr} ${param.toUpperCase()}`,
+                `${globalExpr} ${param[0].toUpperCase()}${param.slice(1).toLowerCase()}`,
+                `${globalExpr} ${param.toLowerCase()}`]
+            showTodo(getTODOs(files, '', expressions))
             break
         case 'sort':
-            printTODO(sortBy(getTODOs(files), param))
+            showTodo(sortBy(getTODOs(files), param))
             break
         case 'date':
-            printTODO(commentsAfterDate(getTODOs(files), param))
+            showTodo(commentsAfterDate(getTODOs(files), param))
             break
         default:
             console.log('wrong command')
