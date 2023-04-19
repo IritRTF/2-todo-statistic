@@ -17,14 +17,7 @@ function checkEntries(text) {
     return text === '_WitoutEntries' ? '' : text
 }
 
-function repeatSymbols(count, symbol) {
-    let str = ''
-    while (count-- > 0) str += symbol
-    return str
-
-}
-
-function formatStringForTable(text, maxSymbols) {
+function fString(text, maxSymbols) {
     if (text.length > maxSymbols) {
         return text.slice(0, maxSymbols - 3) + '...'
     } else {
@@ -63,22 +56,19 @@ function showTodo(arr) {
             const date = checkEntries(parsedText.date)
             const comment = checkEntries(parsedText.comment)
             const importantPoints = comment.indexOf('!') < 0 ? ' ' : '!'
-            result.push(` ${importantPoints} | ` +
-                `${formatStringForTable(user, userFieldLength)} | ` +
-                `${formatStringForTable(date, maxDateField)} | ` +
-                `${formatStringForTable(comment, commentFieldLength)}`)
+            result.push(` ${importantPoints}  |  ` +
+                `${fString(user, userFieldLength)}  |  ` +
+                `${fString(date, maxDateField)}  |  ` +
+                `${fString(comment, commentFieldLength)}`)
         }
-
-        console.log(` ! | ` + `${formatStringForTable('user', userFieldLength)} | ` +
-            `${formatStringForTable('date', maxDateField)} | ` +
-            `${formatStringForTable('comment', commentFieldLength)}`)
-        console.log(repeatSymbols(result[0].length, '-'))
-        result.forEach(element => {
-            console.log(element)
-        })
+       
+        console.log(` !  |  ` + `${fString('user', userFieldLength)}  |  ` +
+            `${fString('date', maxDateField)}  |  ` +
+            `${fString('comment', commentFieldLength)}`)
+        console.log(`${'-'.repeat(result[0].length)}`)
+        result.forEach(element => console.log(element))
+        console.log(`${'-'.repeat(result[0].length)}`)
     }
-
-
 }
 
 function getTODOs(arr = [], contains = '', expr = [globalExpr]) {
@@ -89,11 +79,9 @@ function getTODOs(arr = [], contains = '', expr = [globalExpr]) {
             while (cursorIndex > 0) {
                 const endStringIndex = files[i].indexOf('\n', cursorIndex)
                 const substring = files[i].substring(cursorIndex, endStringIndex)
-                if (contains.length > 0) {
-                    if (substring.includes(contains)) {
-                        elements.push(substring)
-                    }
-                } else {
+                if (contains.length > 0) 
+                    if (substring.includes(contains)) elements.push(substring)
+                else {
                     elements.push(substring)
                 }
 
