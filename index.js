@@ -1,9 +1,6 @@
 const {getAllFilePathsWithExtension, readFile} = require('./fileSystem');
 const {readLine} = require('./console');
-const { log } = require('console');
 const path = require('node:path');
-
-const files = getFiles();
 
 console.log('Please, write your command!');
 readLine(processCommand);
