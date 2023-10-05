@@ -94,37 +94,51 @@ function parseTodos(file) {
     else console.log('Wrond date argument. Use format {yyyy[-mm[-dd]]}');
 }
 
-  function showTable(todos) {
-    const lensConfig = { imp: 1, user: 10, date: 10, todo: 50, file: 20 };
-    const lens = todos.reduce((acc, item) => {
-      acc.user = Math.min(Math.max(item.user?.length || 0, acc.user), lensConfig.user);
-      acc.todo = Math.min(Math.max(item.todo?.length || 0, acc.todo), lensConfig.todo);
-      return acc;
-    }, { ...lensConfig });
-    const tableHead = getFormattedTableRow([
-      { value: '!', len: lens.imp },
-      { value: 'user', len: lens.user },
-      { value: 'date', len: lens.date },
-      { value: 'comment', len: lens.todo },
-      { value: 'file', len: lens.file },
-    ]);
-    console.log(tableHead);
-    console.log('-'.repeat(tableHead.length));
-    if (todos.length > 0) {
-      todos.forEach(todo => {
-        console.log(getFormattedTableRow([
-          { value: todo.importance > 0 ? '!' : '', len: lens.imp },
-          { value: todo.user || '', len: lens.user },
-          { value: todo.date || '', len: lens.date },
-          { value: todo.todo || '', len: lens.todo },
-          { value: todo.file, len: lens.file },
-        ]));
-      });
-    } else {
-      console.log('No results found');
-    }
-    console.log('-'.repeat(tableHead.length));
+function showTable(todos) {
+  const lensConfig = { imp: 1, user: 10, date: 10, todo: 50, file: 20 };
+
+  const getMaxLen = (arr, propName, defaultLen) => {
+    return arr.reduce((maxLen, item) => {
+      const len = item[propName]?.length || defaultLen;
+      return Math.max(maxLen, len);
+    }, defaultLen);
+  };
+
+  const lens = {
+    imp: 1,
+    user: getMaxLen(todos, "user", lensConfig.user),
+    date: getMaxLen(todos, "date", lensConfig.date),
+    todo: getMaxLen(todos, "todo", lensConfig.todo),
+    file: getMaxLen(todos, "file", lensConfig.file)
+  };
+
+  const tableHead = getFormattedTableRow([
+    { value: '!', len: lens.imp },
+    { value: 'user', len: lens.user },
+    { value: 'date', len: lens.date },
+    { value: 'comment', len: lens.todo },
+    { value: 'file', len: lens.file },
+  ]);
+
+  console.log(tableHead);
+  console.log('-'.repeat(tableHead.length));
+
+  if (todos.length > 0) {
+    todos.forEach(todo => {
+      console.log(getFormattedTableRow([
+        { value: todo.importance > 0 ? '!' : '', len: lens.imp },
+        { value: todo.user || '', len: lens.user },
+        { value: todo.date || '', len: lens.date },
+        { value: todo.todo || '', len: lens.todo },
+        { value: todo.file || '', len: lens.file },
+      ]));
+    });
+  } else {
+    console.log('No results found');
   }
+
+  console.log('-'.repeat(tableHead.length));
+}
   
   function getFormattedTableRow(row) {
     const ss = ' '.repeat(2);
